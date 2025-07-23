@@ -7,7 +7,7 @@ import fastify from "fastify";
 import { setupSockets } from "./sockets.js";
 import multipart from "@fastify/multipart";
 
-const port = 3000;
+const port = 8080;
 
 const app = fastify({
   logger: true,
