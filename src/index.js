@@ -34,7 +34,7 @@ app.ready((err) => {
     console.log(`Server is running on port ${port}`);
   };
 
-  app.listen({ port }, (err) => {
+  app.listen({ port, host: "0.0.0.0" }, (err) => {
     if (err) {
       app.log.error(err);
       process.exit(1);
