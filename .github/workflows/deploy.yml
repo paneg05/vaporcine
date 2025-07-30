@@ -1,0 +1,23 @@
+name: Deploy automático
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/aluncard6/vaporcine
+            git pull origin main
+            npm install
+            pm2 restart backend || pm2 start src/index.js --name backend
