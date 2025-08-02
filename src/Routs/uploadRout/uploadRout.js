@@ -13,6 +13,7 @@ async function uploadRoute(app, options) {
   });
 
   app.post("/upload", async (request, reply) => {
+    console.log("post request received");
     const { headers } = request.raw;
     const {
       query: { socketId },
