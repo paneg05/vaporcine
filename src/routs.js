@@ -16,6 +16,7 @@ class Routes {
   }
 
   async post(req, res) {
+    console.log("post request received");
     const { headers } = req;
     const {
       query: { socketId },
