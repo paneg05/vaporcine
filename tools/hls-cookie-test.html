@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Teste HLS com Signed Cookie</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  </head>
+  <body>
+    <h1>Player HLS com Signed Cookie</h1>
+    <video
+      id="video"
+      controls
+      width="640"
+      height="360"
+      style="display: none"
+    ></video>
+    <button id="playBtn">Pedir acesso e Reproduzir</button>
+    <p id="msg"></p>
+    <script>
+      async function getSignedCookies(movieId) {
+        const msg = document.getElementById("msg");
+        msg.textContent = "Solicitando acesso...";
+        try {
+          const resp = await fetch(
+            `http://localhost:3000/get-access-token/${movieId}`,
+            {
+              credentials: "include",
+            }
+          );
+          if (!resp.ok)
+            throw new Error("Erro ao obter cookies: " + resp.status);
+          msg.textContent = "Acesso autorizado. Reproduzindo...";
+        } catch (e) {
+          msg.textContent = "Erro: " + e.message;
+          throw e;
+        }
+      }
+
+      async function playVideo() {
+        const movieId = "abacate"; // Troque pelo ID desejado
+        try {
+          await getSignedCookies(movieId);
+        } catch {
+          return;
+        }
+        const video = document.getElementById("video");
+        // Use exatamente o mesmo endereço da CDN configurado no backend
+        const videoSrc = `http://34.8.161.128/processedFiles/${movieId}/master.m3u8`;
+        video.style.display = "";
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(videoSrc);
+          hls.attachMedia(video);
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = videoSrc;
+        } else {
+          document.getElementById("msg").textContent =
+            "Seu navegador não suporta HLS.";
+        }
+      }
+
+      document.getElementById("playBtn").onclick = playVideo;
+    </script>
+  </body>
+</html>

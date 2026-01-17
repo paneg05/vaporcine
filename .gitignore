@@ -1,0 +1,8 @@
+.env
+vaporcine-a823d-firebase-adminsdk-fbsvc-804e1c2704.json
+node_modules/
+processedFiles/
+uploads/
+
+# Ignorar binários do ffmpeg (Windows build)
+utils/videoconverter/ffmpeg/ffmpeg-2025-09-04-git-2611874a50-full_build/

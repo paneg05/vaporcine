@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HLS Test Player</title>
+    <style>
+      body {
+        font-family: system-ui, Segoe UI, Helvetica, Arial;
+        margin: 18px;
+      }
+      .box {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        box-sizing: border-box; /* Adicionado para garantir que padding não aumente a largura */
+      }
+      video {
+        width: 100%;
+        background: #000;
+        margin-top: 10px;
+      }
+      .meta {
+        margin-top: 8px;
+        color: #666;
+      }
+      .warning-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h2>HLS Test Player</h2>
+      <p>
+        Coloque a URL do `master.m3u8` (pública ou signed URL) e clique em
+        <strong>Play</strong>.
+      </p>
+      <label>HLS URL</label>
+      <input
+        id="src"
+        type="text"
+        placeholder="https://firebasestorage.googleapis.com/v0/b/YOUR_PROJECT_ID.appspot.com/o/path%2Fto%2Fyour%2Fmaster.m3u8?alt=media&token=..."
+      />
+      <div style="margin-top: 8px">
+        <button id="play">Play</button>
+        <button id="copy">Copiar URL</button>
+      </div>
+      <div class="meta">
+        <p id="status">Status: aguardando URL</p>
+        <p>
+          Observações: se usar no navegador, configure CORS no bucket do
+          Storage. Se não for público, use uma signed URL.
+        </p>
+      </div>
+
+      <video id="video" controls crossorigin="anonymous"></video>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+
+    <hr />
+    <div class="box">
+      <h3>Firebase Storage — obter URL (opcional)</h3>
+      <p>
+        Cole aqui o objeto de configuração do Firebase (web app) e o caminho do
+        arquivo no Storage.
+      </p>
+      <label>Firebase config (JSON)</label>
+      <textarea
+        id="fbConfig"
+        rows="6"
+        style="width: 100%; font-family: monospace"
+      >
+  {
+    "apiKey": "YOUR_API_KEY",
+    "authDomain": "YOUR_PROJECT.firebaseapp.com",
+    "projectId": "YOUR_PROJECT",
+    "storageBucket": "YOUR_PROJECT_ID.appspot.com",
+    "messagingSenderId": "...",
+    "appId": "..."
+  }
+      </textarea>
+      <label>Storage file path (ex: processedFiles/abacate/master.m3u8)</label>
+      <input
+        id="fbPath"
+        type="text"
+        value="1080p/index.m3u8"
+        placeholder="processedFiles/abacate/master.m3u8"
+      />
+      <div style="margin-top: 8px">
+        <button id="fbGet">Obter download URL</button>
+      </div>
+      <p class="meta" id="fbStatus">Status: aguardando</p>
+
+      <div class="warning-box">
+        <h4>Importante para HLS no Firebase Storage:</h4>
+        <p>
+          Para que um stream HLS seja reproduzido corretamente (não apenas o
+          manifesto principal `master.m3u8`, mas também os manifestos de mídia e
+          os segmentos de vídeo `.ts`/`.mp4`), você **DEVE** configurar as
+          Regras de Segurança do Firebase Storage para permitir leitura pública
+          (ou acesso autorizado adequado) para **TODOS os arquivos no
+          diretório** onde o seu stream HLS está armazenado.
+        </p>
+        <p>
+          A URL de download obtida acima é para o arquivo `master.m3u8`
+          específico e seu token de acesso. O player HLS fará requisições
+          subsequentes para os outros arquivos HLS com base nas referências do
+          manifesto principal. Essas requisições precisarão ser permitidas pelas
+          suas Regras de Segurança.
+        </p>
+        <p>
+          Exemplo de Regra de Segurança para um diretório público HLS (substitua
+          `seu-diretorio-hls` pelo caminho real):
+        </p>
+        <pre><code>rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /seu-diretorio-hls/{allHlsFiles=**} {
+      allow read; // Permite leitura pública para todos os arquivos HLS
+    }
+    // Mantenha outras regras para o restante do seu bucket conforme necessário
+    match /{allOtherPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <script>
+      const srcInput = document.getElementById("src");
+      const playBtn = document.getElementById("play");
+      const copyBtn = document.getElementById("copy");
+      const status = document.getElementById("status");
+      const video = document.getElementById("video");
+
+      // optional: read url from ?url= query param
+      const params = new URLSearchParams(location.search);
+      if (params.get("url")) srcInput.value = params.get("url");
+
+      function setStatus(s) {
+        status.textContent = "Status: " + s;
+      }
+
+      playBtn.addEventListener("click", async () => {
+        const url = srcInput.value.trim();
+        if (!url) return setStatus("informe uma URL");
+        setStatus("carregando...");
+        if (video.src && video.src === url) {
+          video.play();
+          return setStatus("reproduzindo");
+        }
+
+        // cleanup
+        if (window.hlsPlayer) {
+          try {
+            window.hlsPlayer.destroy();
+          } catch (e) {}
+          window.hlsPlayer = null;
+        }
+
+        if (Hls.isSupported()) {
+          const hls = new Hls({ maxBufferLength: 30 });
+          window.hlsPlayer = hls;
+          hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            setStatus("manifest OK — reproduzindo");
+            video.play();
+          });
+          hls.on(Hls.Events.ERROR, function (event, data) {
+            console.error("HLS error", data);
+            setStatus(
+              "erro HLS: " + (data?.details || data?.type || "unknown")
+            );
+          });
+          try {
+            hls.loadSource(url);
+            hls.attachMedia(video);
+          } catch (e) {
+            console.error(e);
+            setStatus("falha ao carregar source");
+          }
+        } else {
+          // native support (Safari)
+          video.src = url;
+          video.addEventListener("loadedmetadata", () =>
+            setStatus("metadata carregado")
+          );
+          video.addEventListener("error", () =>
+            setStatus("erro no elemento video")
+          );
+        }
+      });
+
+      copyBtn.addEventListener("click", () => {
+        const val = srcInput.value.trim();
+        if (!val) return setStatus("nada para copiar");
+        navigator.clipboard
+          ?.writeText(val)
+          .then(() => setStatus("URL copiada"))
+          .catch(() => setStatus("falha ao copiar"));
+      });
+    </script>
+
+    <script type="module">
+      // Firebase storage download URL helper (uses modular SDK from CDN)
+      import {
+        initializeApp,
+        getApps,
+      } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+      import {
+        getStorage,
+        ref,
+        getDownloadURL,
+      } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+      const fbGet = document.getElementById("fbGet");
+      const fbConfigEl = document.getElementById("fbConfig");
+      const fbPathEl = document.getElementById("fbPath");
+      const fbStatus = document.getElementById("fbStatus");
+
+      function setFbStatus(s) {
+        fbStatus.textContent = "Status: " + s;
+      }
+
+      fbGet.addEventListener("click", async () => {
+        setFbStatus("processando...");
+        let cfg;
+        try {
+          cfg = JSON.parse(fbConfigEl.value);
+        } catch (e) {
+          setFbStatus("config JSON inválido");
+          return;
+        }
+
+        try {
+          if (!getApps().length) {
+            initializeApp(cfg);
+          }
+          const storage = getStorage();
+          const path = fbPathEl.value.trim();
+          if (!path) {
+            setFbStatus("informe um caminho");
+            return;
+          }
+          const fileRef = ref(storage, path);
+          const url = await getDownloadURL(fileRef);
+          console.log("URL de download:", url);
+          setFbStatus("URL obtida — ver console");
+          // If it's an HLS playlist, populate player input and play
+          if (url.endsWith(".m3u8")) {
+            const srcInput = document.getElementById("src");
+            srcInput.value = url;
+            document.getElementById("play").click();
+          } else if (url.match(/\.jpe?g|\.png|\.gif$/i)) {
+            // show image preview
+            let img = document.getElementById("fbPreviewImg");
+            if (!img) {
+              img = document.createElement("img");
+              img.id = "fbPreviewImg";
+              img.style.maxWidth = "100%";
+              document.querySelector(".box").appendChild(img);
+            }
+            img.src = url;
+          }
+        } catch (err) {
+          console.error("Erro ao obter a URL de download:", err);
+          setFbStatus("erro: " + (err?.message || err));
+        }
+      });
+    </script>
+  </body>
+</html>
