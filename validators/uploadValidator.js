@@ -3,21 +3,21 @@ export const validateUploadFields = (fields) => {
 
   if (!fields.titulo || fields.titulo.trim().length < 3) {
     errors.push(
-      "O campo 'titulo' é obrigatório e deve ter pelo menos 3 caracteres."
+      "O campo 'titulo' é obrigatório e deve ter pelo menos 3 caracteres.",
     );
   }
 
   if (!fields.descricao || fields.descricao.trim().length < 10) {
     errors.push(
-      "O campo 'descricao' é obrigatório e deve ter pelo menos 10 caracteres."
+      "O campo 'descricao' é obrigatório e deve ter pelo menos 10 caracteres.",
     );
   }
 
   if (!fields.categoria || fields.categoria.trim().length === 0) {
     errors.push("O campo 'categoria' é obrigatório.");
   }
-
   let tags = [];
+  /*
   if (fields.tags) {
     try {
       tags = JSON.parse(fields.tags);
@@ -30,7 +30,7 @@ export const validateUploadFields = (fields) => {
   } else {
     errors.push("O campo 'tags' é obrigatório.");
   }
-
+*/
   return {
     isValid: errors.length === 0,
     errors,

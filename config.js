@@ -44,7 +44,11 @@ await app.register(fastifyMultipart, {
 });
 
 await app.register(cors, {
-  origin: ["http://localhost:8080", "http://127.0.0.1:8080"],
+  origin: [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://xp520mkk-8080.brs.devtunnels.ms/",
+  ],
   credentials: true,
 });
 

@@ -42,28 +42,40 @@ export const handleUpload = async (request, reply) => {
 
     for await (const part of parts) {
       if (part.file) {
+        // Skip empty or invalid file uploads
+        if (
+          !part.filename ||
+          part.file.truncated ||
+          part.file.bytesRead === 0
+        ) {
+          continue;
+        }
+        const filename = path.basename(part.filename);
+        const filePath = path.join(uploadDir, filename);
+        if (
+          part.mimetype !== "video/mp4" &&
+          part.mimetype !== "image/jpeg" &&
+          part.mimetype !== "video/x-matroska" &&
+          part.mimetype !== "image/png"
+        ) {
+          return reply
+            .status(400)
+            .send({ error: "Formato de arquivo inválido" });
+        }
         try {
-          const filename = path.basename(part.filename);
-          const filePath = path.join(uploadDir, filename);
-          if (
-            part.mimetype !== "video/mp4" &&
-            part.mimetype !== "image/jpeg" &&
-            part.mimetype !== "video/x-matroska" &&
-            part.mimetype !== "image/png"
-          ) {
-            return reply
-              .status(400)
-              .send({ error: "Formato de arquivo inválido" });
-          }
-
-          await pipelineAsync(part.file, fs.createWriteStream(filePath));
+          await pipelineAsync(part.file, fs.createWriteStream(filePath)).catch(
+            (err) => {
+              console.error(`Erro ao salvar ${filename}:`, err);
+              throw err;
+            },
+          );
           console.log(`Arquivo salvo: ${filename}`);
           if (part.mimetype.includes("video")) {
             fileNameToTranscode = filename;
           }
         } catch (err) {
-          console.error(`Erro ao salvar ${fileNameToTranscode}:`, err);
-          throw err;
+          // Already logged above
+          return reply.status(500).send({ error: "Falha ao salvar arquivo" });
         }
       } else {
         fields[part.fieldname] = part.value;
@@ -77,14 +89,14 @@ export const handleUpload = async (request, reply) => {
 
     await renameFileAsync(
       path.join(uploadDir, fileNameToTranscode),
-      path.join(uploadDir, fields.titulo + path.extname(fileNameToTranscode))
+      path.join(uploadDir, fields.titulo + path.extname(fileNameToTranscode)),
     );
     const newFilm = new filmsModel({
       ...fields,
       status: "pendente",
       videopath: path.join(
         uploadDir,
-        fields.titulo + path.extname(fileNameToTranscode)
+        fields.titulo + path.extname(fileNameToTranscode),
       ),
     });
     const teste = await newFilm.save();

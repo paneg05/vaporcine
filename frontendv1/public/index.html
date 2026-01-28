@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
+      crossorigin="anonymous"
+    />
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.min.js"
+      integrity="sha512-Jq1JnVXlkYQOYQpz31qIV/0l67d97J9I6sbILtfiSYX00Isr2zK7XDRmHW8d2iBTwNZfL7sHkHGT0EzLs90jdw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="app.js"></script>
+  </head>
+  <body class="container-fluid">
+    <div class="row">
+      <div class="col-md-4">
+        <h3>Upload Files using BusBoy</h3>
+        <form id="form" method="POST" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="titulo">Title</label>
+            <input type="text" class="form-control" id="titulo" name="titulo" />
+            <label for="descricao">descricao</label>
+            <textarea
+              class="form-control"
+              id="descricao"
+              name="descricao"
+              style="resize: none"
+            ></textarea>
+            <label for="categoria">Category</label>
+            <select class="form-select" id="categoria" name="categoria">
+              <option value="filmes">filmes</option>
+              <option value="series">series</option>
+              <option value="documentarios">documentarios</option>
+              <option value="outros">outros</option>
+            </select>
+            <label for="tags">Tags</label>
+            <input
+              type="text"
+              class="form-control"
+              id="tags"
+              name="tags"
+              placeholder="tag1, tag2, tag3"
+            />
+            <label for="field">Files</label>
+            <input
+              type="file"
+              class="form-control"
+              id="file"
+              name="file"
+              onchange="showSize()"
+              multiple
+            />
+            <label for="lançamento">lançamento</label>
+            <input
+              type="text"
+              class="form-control"
+              id="lancamento"
+              name="lancamento"
+            />
+            <label for="elenco">elenco</label>
+            <input type="text" class="form-control" id="elenco" name="elenco" />
+            <label for="idioma">idioma</label>
+            <input type="text" class="form-control" id="idioma" name="idioma" />
+            <label for="diretor">diretor</label>
+            <input
+              type="text"
+              class="form-control"
+              id="diretor"
+              name="diretor"
+            />
+            <output class="span" id="size">1gb</output>
+            <br />
+            <output class="span" id="msg">File Uploaded with success!</output>
+          </div>
+          <div class="form-gorup">
+            <input type="submit" class="btn btn-success" />
+            <input type="reset" class="btn btn-danger" />
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+    crossorigin="anonymous"
+  ></script>
+</html>
